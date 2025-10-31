@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import logging
+import smtplib
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
