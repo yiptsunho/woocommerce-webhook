@@ -22,6 +22,9 @@ from io import BytesIO
 GMAIL_USER = os.environ["GMAIL_USER"]
 GMAIL_APP_PASSWORD = os.environ["GMAIL_APP_PASSWORD"]
 AES_KEY = os.environ["AES_KEY"]
+GMAIL_USER_DISPLAY_NAME = os.environ["GMAIL_USER_DISPLAY_NAME"]
+AREA_ID = "11001"
+QR_CODE_TYPE = "6"
 
 # Global SMTP connection (reused across invocations)
 SMTP_CONNECTION = None
@@ -104,7 +107,7 @@ def get_smtp_connection():
 # -------------------------------------------------
 def send_email(to_email: str, html: str, qr_png: bytes):
     msg = MIMEMultipart("related")
-    msg["From"] = GMAIL_USER
+    msg["From"] = f"{GMAIL_USER_DISPLAY_NAME} <{GMAIL_USER}>"
     msg["To"] = to_email
     msg["Subject"] = "Your Booking QR Code"
 
@@ -152,7 +155,7 @@ def lambda_handler(event, context):
         end_dt = dt_end.strftime("%Y%m%d%H%M%S")
 
         # QR data
-        qr_data = f"[,,{start_dt},{end_dt},,,,,]"
+        qr_data = f"[,{AREA_ID},{start_dt},{end_dt},,,{QR_CODE_TYPE},]"
         final_qr_string = "SK01" + encrypt_aes_ecb(qr_data)
         qr_png = generate_qr_png(final_qr_string)
 
