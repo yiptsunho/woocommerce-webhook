@@ -25,6 +25,7 @@ AES_KEY = os.environ["AES_KEY"]
 GMAIL_USER_DISPLAY_NAME = os.environ["GMAIL_USER_DISPLAY_NAME"]
 AREA_ID = "11001"
 QR_CODE_TYPE = "6"
+IS_ENCRYPT_QR_CODE = os.environ["IS_ENCRYPT_QR_CODE"]
 
 # Global SMTP connection (reused across invocations)
 SMTP_CONNECTION = None
@@ -42,7 +43,13 @@ def load_template():
     with open("template.html", "r", encoding="utf-8") as f:
         return f.read()
 
+def load_binary(path: str):
+    with open(path, "rb") as f:
+        return f.read()
+
 HTML_TEMPLATE = load_template()
+CLIENT_LOGO = load_binary("logo.png")          # ← your client's logo file
+CLIENT_MAP = load_binary("map.png")            # ← your client's venue map file
 
 # -------------------------------------------------
 # Helper: PKCS7 + AES-ECB
@@ -105,17 +112,27 @@ def get_smtp_connection():
 # -------------------------------------------------
 # Send Email
 # -------------------------------------------------
-def send_email(to_email: str, html: str, qr_png: bytes):
+def send_email(to_email: str, html: str, qr_png: bytes, order_number: str):
     msg = MIMEMultipart("related")
     msg["From"] = f"{GMAIL_USER_DISPLAY_NAME} <{GMAIL_USER}>"
     msg["To"] = to_email
-    msg["Subject"] = "Your Booking QR Code"
+    msg["Subject"] = f"預訂成功！您的入場二維碼 - 訂單 #{order_number}"
 
     msg.attach(MIMEText(html, "html"))
 
     qr_image = MIMEImage(qr_png)
     qr_image.add_header("Content-ID", "<qr_code.png>")
     msg.attach(qr_image)
+
+    # Client Logo
+    logo_img = MIMEImage(CLIENT_LOGO)
+    logo_img.add_header("Content-ID", "<logo>")
+    msg.attach(logo_img)
+
+    # Client Map
+    map_img = MIMEImage(CLIENT_MAP)
+    map_img.add_header("Content-ID", "<map>")
+    msg.attach(map_img)
 
     server = get_smtp_connection()
     server.send_message(msg)
@@ -133,6 +150,9 @@ def lambda_handler(event, context):
         if event.get("isBase64Encoded", False):
             raw_body = base64.b64decode(raw_body).decode("utf-8")
         payload = json.loads(raw_body)
+
+        pretty_json = json.dumps(raw_body, indent=4, sort_keys=True)
+        print(pretty_json)
 
         # Extract times
         start_raw = end_raw = None
@@ -156,7 +176,11 @@ def lambda_handler(event, context):
 
         # QR data
         qr_data = f"[,{AREA_ID},{start_dt},{end_dt},,,{QR_CODE_TYPE},]"
-        final_qr_string = "SK01" + encrypt_aes_ecb(qr_data)
+        if IS_ENCRYPT_QR_CODE:
+            final_qr_string = "SK01" + encrypt_aes_ecb(qr_data)
+        else:
+            final_qr_string = "SK01" + qr_data
+
         qr_png = generate_qr_png(final_qr_string)
 
         # Customer
@@ -171,11 +195,12 @@ def lambda_handler(event, context):
         for item in payload.get("line_items", []):
             items_html += f"<tr><td>{item.get('name','')}</td><td>{item.get('quantity',0)}</td><td>{item.get('total','')} {payload.get('currency','')}</td></tr>"
 
+        order_number = payload.get("number", "N/A")
         # Render template
         html_body = HTML_TEMPLATE.format(
             first_name=billing.get("first_name", ""),
             last_name=billing.get("last_name", ""),
-            order_number=payload.get("number", "N/A"),
+            order_number=order_number,
             date_created=payload.get("date_created", "")[:19].replace("T", " "),
             entry_time=entry_time,
             start_time=start_raw,
@@ -189,7 +214,7 @@ def lambda_handler(event, context):
             year=datetime.now().year
         )
 
-        send_email(customer_email, html_body, qr_png)
+        send_email(customer_email, html_body, qr_png, order_number)
 
         logger.info("Success")
         return {"statusCode": 200, "body": "OK"}
