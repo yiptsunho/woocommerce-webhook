@@ -163,73 +163,50 @@
 </head>
 <body>
 <div class="container">
-    <!-- Header with Logo -->
     <div class="header">
         <img src="cid:logo" alt="公司標誌">
         <h1>預訂成功</h1>
     </div>
 
-    <!-- Main Content -->
     <div class="content">
         <p>尊敬的 <strong>{first_name} {last_name}</strong> 您好，</p>
         <p>感謝您的預訂！您的訂單 <strong>#{order_number}</strong> 已確認，我們期待您的到來！</p>
 
-        <h2>預訂詳情</h2>
-        <p><strong>活動時間：</strong> {start_time} 至 {end_time}</p>
-        <p><strong>可入場時間：</strong> <span class="highlight">{entry_time}</span> 起（可提前10分鐘入場）</p>
-        <p><strong>下單時間：</strong> {date_created}</p>
-
-        <h2>入場二維碼 (QR Code)</h2>
-        <div class="qr">
-            <p style="margin-bottom: 20px; color: #2c3e50;">
-                請向門口閘機出示以下二維碼入場<br>
-                <strong style="color:#e74c3c;">（由 {entry_time} 起生效）</strong>
-            </p>
-            <img src="cid:qr_code.png" alt="入場二維碼">
-        </div>
-
         <h2>訂單摘要</h2>
         <table>
-            <thead>
-            <tr>
-                <th>項目</th>
-                <th>數量</th>
-                <th>金額</th>
-            </tr>
-            </thead>
-            <tbody>
-            {line_items}
-            </tbody>
-            <tfoot>
-            <tr>
-                <td colspan="2" style="text-align:right; font-weight: bold;">總計：</td>
-                <td style="font-weight: bold;">{total} {currency}</td>
-            </tr>
-            </tfoot>
+            <thead><tr><th>項目</th><th>數量</th><th>金額</th></tr></thead>
+            <tbody>{line_items}</tbody>
+            <tfoot><tr><td colspan="2" style="text-align:right; font-weight:bold;">總計：</td><td style="font-weight:bold;">{total} {currency}</td></tr></tfoot>
         </table>
 
-        <!-- Footer -->
-        <div class="footer">
-            <img src="cid:map" alt="場地地圖" class="map">
+        <!-- 多時段 QR code 區塊 -->
+        <h2 style="margin-top:40px;">您的入場二維碼（共 {timeslot_count} 個時段）</h2>
+        {qr_codes_html}
 
-            <div class="address">
-                <a href="https://maps.app.goo.gl/QSiC7xGbeLYRYnWq5" target="_blank">
-                    新蒲崗五芳街9–11號<br>盛景工業大廈
-                </a>
-            </div>
+        <p style="margin-top:40px;">此致<br><strong>場地團隊 敬上</strong></p>
+    </div>
 
-            <!-- 純 CSS 三顆圖示（請換成你自己的連結）-->
-            <div class="social-icons">
-                <a href="https://www.instagram.com/dukballconcept/" class="ig" target="_blank">
-                    <img src="cid:ig_icon" alt="Instagram" class="social-svg">
-                </a>
-                <a href="https://www.facebook.com/profile.php?id=61583439221669" class="fb" target="_blank">
-                    <img src="cid:fb_icon" alt="Facebook" class="social-svg">
-                </a>
-                <a href="https://wa.me/85294489603" class="wa" target="_blank">
-                    <img src="cid:wa_icon" alt="WhatsApp" class="social-svg">
-                </a>
-            </div>
+    <!-- Footer -->
+    <div class="footer">
+        <img src="cid:map" alt="場地地圖" class="map">
+
+        <div class="address">
+            <a href="https://maps.app.goo.gl/QSiC7xGbeLYRYnWq5" target="_blank" style="color:#ffd43b; text-decoration:none;">
+                新蒲崗五芳街9–11號<br>盛景工業大廈
+            </a>
+        </div>
+
+        <div class="social-icons">
+            <a href="https://www.instagram.com/dukballconcept/" class="ig" target="_blank">
+                <img src="cid:ig_icon" alt="Instagram" class="social-svg">
+            </a>
+            <a href="https://www.facebook.com/profile.php?id=61583439221669" class="fb" target="_blank">
+                <img src="cid:fb_icon" alt="Facebook" class="social-svg">
+            </a>
+            <a href="https://wa.me/85294489603" class="wa" target="_blank">
+                <img src="cid:wa_icon" alt="WhatsApp" class="social-svg">
+            </a>
+        </div>
 
             <div class="website-link">
                 <a href="https://www.dukballconcept.com" target="_blank">www.dukballconcept.com</a>
