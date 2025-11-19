@@ -4,22 +4,161 @@
     <meta charset="UTF-8">
     <title>預訂成功 – 訂單 #{order_number}</title>
     <style>
-        body {{ font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; line-height: 1.6; background: #f9f9f9; margin: 0; padding: 20px; }}
-        .container {{ max-width: 600px; margin: auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
-        .header {{ background: #2c3e50; color: white; padding: 20px; text-align: center; }}
-        .header h1 {{ margin: 0; font-size: 24px; }}
-        .content {{ padding: 20px; }}
-        h2 {{ color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
-        th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #eee; }}
-        th {{ background: #f5f5f5; }}
-        .qr {{ text-align: center; margin: 20px 0; }}
-        .qr img {{ width: 200px; height: 200px; }}
-        .footer {{ background: #ecf0f1; padding: 15px; text-align: center; font-size: 12px; color: #7f8c8d; }}
-        .highlight {{ background: #fffacd; padding: 2px 6px; border-radius: 4px; }}
-        .footer img {{ max-width: 320px; width: 100%; height: auto !important; border-radius: 10px; margin: 20px auto; display: block; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }}
-        .footer .address {{ font-weight: bold; color: #ffd43b !important; margin-bottom: 15px; font-size: 18px; }}
-        .header img {{ max-width: 400px; width: 50%; height: auto !important; margin-bottom: 15px; }}
+        body {{
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            background: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }}
+
+        .container {{
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }}
+
+        .header {{
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }}
+
+        .header h1 {{
+            margin: 0;
+            font-size: 24px;
+        }}
+
+        .content {{
+            padding: 20px;
+        }}
+
+        h2 {{
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }}
+
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }}
+
+        th, td {{
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }}
+
+        th {{
+            background: #f5f5f5;
+        }}
+
+        .qr {{
+            text-align: center;
+            margin: 20px 0;
+        }}
+
+        .qr img {{
+            width: 200px;
+            height: 200px;
+        }}
+
+        .footer {{
+            background: #ecf0f1;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }}
+
+        .highlight {{
+            background: #fffacd;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }}
+
+        .footer > img {{
+            max-width: 320px;
+            width: 100%;
+            height: auto !important;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }}
+
+        .footer .address {{
+            font-weight: bold;
+            color: #ffd43b !important;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }}
+
+        .header img {{
+            max-width: 400px;
+            width: 50%;
+            height: auto !important;
+            margin-bottom: 15px;
+        }}
+
+        .social-icons {{
+            margin: 30px 0 20px;
+            text-align: center;
+        }}
+
+        .social-icons a {{
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            margin: 0 15px;
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.25s;
+        }}
+
+        .social-icons a:hover {{
+            transform: scale(1.18);
+        }}
+
+        .social-svg {{
+            width: 100%;
+            height: 100%;
+        }}
+
+        .ig {{
+            background-color: #f00075;
+            color: #fff;
+        }}
+
+        .fb {{
+            background-color: #0866ff;
+            color: #fff;
+        }}
+
+        .wa {{
+            background-color: #25d366;
+            color: #fff;
+        }}
+
+        .website-link a {{
+            color: #74b9ff;
+            text-decoration: underline;
+            font-weight: 500;
+        }}
+
+        .footer .copyright {{
+            margin-top: 25px;
+            font-size: 13px;
+            opacity: 0.85;
+        }}
     </style>
 </head>
 <body>
@@ -69,26 +208,38 @@
             </tfoot>
         </table>
 
-        <h2>客戶資料</h2>
-        <p><strong>賬單地址：</strong> {billing_address}</p>
-<!--        <p><strong>送貨地址：</strong> {shipping_address}</p>-->
-<!--        <p><strong>付款方式：</strong> {payment_method}</p>-->
+        <!-- Footer -->
+        <div class="footer">
+            <img src="cid:map" alt="場地地圖" class="map">
 
-<!--        <p>我們非常期待你的到來！</p>-->
-        <p>此致<br><strong>場地團隊 敬上</strong></p>
-    </div>
+            <div class="address">
+                <a href="https://maps.app.goo.gl/QSiC7xGbeLYRYnWq5" target="_blank">
+                    新蒲崗五芳街9–11號<br>盛景工業大廈
+                </a>
+            </div>
 
-    <!-- Footer with Map + Address -->
-    <div class="footer">
-        <img src="cid:map" alt="場地地圖">
-        <div class="address">
-            新蒲崗五芳街9–11號<br>盛景工業大廈
+            <!-- 純 CSS 三顆圖示（請換成你自己的連結）-->
+            <div class="social-icons">
+                <a href="https://www.instagram.com/dukballconcept/" class="ig" target="_blank">
+                    <img src="cid:ig_icon" alt="Instagram" class="social-svg">
+                </a>
+                <a href="https://www.facebook.com/profile.php?id=61583439221669" class="fb" target="_blank">
+                    <img src="cid:fb_icon" alt="Facebook" class="social-svg">
+                </a>
+                <a href="https://wa.me/85294489603" class="wa" target="_blank">
+                    <img src="cid:wa_icon" alt="WhatsApp" class="social-svg">
+                </a>
+            </div>
+
+            <div class="website-link">
+                <a href="https://www.dukballconcept.com" target="_blank">www.dukballconcept.com</a>
+            </div>
+
+            <div class="copyright">
+                <!--        © {year} Duk Ball Concept 版權所有<br>-->
+                如有查詢請電郵至 <a href="mailto:dukballconcept@gmail.com">dukballconcept@gmail.com</a>
+            </div>
         </div>
-<!--        <p>場地地圖</p>-->
-        <p style="margin-top: 20px; font-size: 13px; opacity: 0.9;">
-<!--            © {year} Duk Ball Concept 版權所有<br>-->
-            如有查詢請電郵至 <a href="mailto:dukballconcept@gmail.com">dukballconcept@gmail.com</a>
-        </p>
     </div>
 </div>
 </body>

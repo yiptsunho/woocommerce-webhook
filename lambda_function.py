@@ -48,8 +48,11 @@ def load_binary(path: str):
         return f.read()
 
 HTML_TEMPLATE = load_template()
-CLIENT_LOGO = load_binary("logo.png")          # ← your client's logo file
-CLIENT_MAP = load_binary("map.png")            # ← your client's venue map file
+CLIENT_LOGO = load_binary("logo_black.png")
+CLIENT_MAP = load_binary("map.png")
+ig_png = load_binary("ig.png")
+fb_png = load_binary("fb.png")
+wa_png = load_binary("wa.png")
 
 # -------------------------------------------------
 # Helper: PKCS7 + AES-ECB
@@ -133,6 +136,18 @@ def send_email(to_email: str, html: str, qr_png: bytes, order_number: str):
     map_img = MIMEImage(CLIENT_MAP)
     map_img.add_header("Content-ID", "<map>")
     msg.attach(map_img)
+
+    ig_icon = MIMEImage(ig_png)
+    ig_icon.add_header("Content-ID", "<ig_icon>")
+    msg.attach(ig_icon)
+
+    fb_icon = MIMEImage(fb_png)
+    fb_icon.add_header("Content-ID", "<fb_icon>")
+    msg.attach(fb_icon)
+
+    wa_icon = MIMEImage(wa_png)
+    wa_icon.add_header("Content-ID", "<wa_icon>")
+    msg.attach(wa_icon)
 
     server = get_smtp_connection()
     server.send_message(msg)

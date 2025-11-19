@@ -13,8 +13,12 @@ pip3 install --target ./package Jinja2
 # 4. Copy your code into package/
 cp lambda_function.py package/
 cp template.html package/
-cp logo.png package/
+#cp logo.png package/
+cp logo_black.png package/
 cp map.png package/
+cp ig.png package/
+cp fb.png package/
+cp wa.png package/
 
 # 5. Zip from inside package/ (so root has lambda_function.py, not a subfolder)
 cd package
