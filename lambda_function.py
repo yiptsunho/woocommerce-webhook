@@ -31,6 +31,7 @@ AREA_ID = "11001"
 QR_CODE_TYPE = "6"
 IS_ENCRYPT_QR_CODE = os.environ.get("IS_ENCRYPT_QR_CODE", "true").lower() == "true"
 LOG_FULL_EVENT = os.environ.get("LOG_FULL_EVENT", "false").lower() in ("1", "true", "yes")
+EARLY_MINUTES = int(os.environ.get("EARLY_ENTRY_MINUTES", "10"))
 
 # WooCommerce REST API (Orders) — set order meta after sending so duplicate order.updated webhooks skip.
 WC_SITE_URL = os.environ.get("WC_SITE_URL", "").strip().rstrip("/")
@@ -238,9 +239,13 @@ def lambda_handler(event, context):
                 try:
                     dt_start = datetime.strptime(start_raw.strip(), "%d/%m/%Y %H:%M")
                     dt_end   = datetime.strptime(end_raw.strip(),   "%d/%m/%Y %H:%M")
-                    entry_time = (dt_start - timedelta(minutes=10)).strftime("%d/%m/%Y %H:%M")
+                    # New feature: Allow clients to enter 10 minutes early if the room is free.
+                    # We show the early entry time to the customer, but the QR code / access system
+                    # still uses the official booking start time.
+                    dt_entry = dt_start - timedelta(minutes=EARLY_MINUTES)
+                    entry_time_str = dt_entry.strftime("%d/%m/%Y %H:%M")
 
-                    start_dt = dt_start.strftime("%Y%m%d%H%M%S")
+                    start_dt = dt_entry.strftime("%Y%m%d%H%M%S")
                     end_dt   = dt_end.strftime("%Y%m%d%H%M%S")
 
                     qr_data = f"[,{AREA_ID},{start_dt},{end_dt},,,{QR_CODE_TYPE},]"
@@ -251,7 +256,7 @@ def lambda_handler(event, context):
                         "product_name": item.get("name", "場地預訂"),
                         "start_time": start_raw,
                         "end_time": end_raw,
-                        "entry_time": entry_time,
+                        "entry_time": entry_time_str,
                         "qr_png": qr_png,
                         "qr_cid": f"qr_{len(timeslots)}"
                     })
