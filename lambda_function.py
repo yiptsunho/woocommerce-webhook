@@ -3,10 +3,14 @@ import json
 import base64
 import logging
 import smtplib
+import ssl
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 # Cryptography
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -26,6 +30,13 @@ GMAIL_USER_DISPLAY_NAME = os.environ["GMAIL_USER_DISPLAY_NAME"]
 AREA_ID = "11001"
 QR_CODE_TYPE = "6"
 IS_ENCRYPT_QR_CODE = os.environ.get("IS_ENCRYPT_QR_CODE", "true").lower() == "true"
+LOG_FULL_EVENT = os.environ.get("LOG_FULL_EVENT", "false").lower() in ("1", "true", "yes")
+
+# WooCommerce REST API (Orders) — set order meta after sending so duplicate order.updated webhooks skip.
+WC_SITE_URL = os.environ.get("WC_SITE_URL", "").strip().rstrip("/")
+WC_CONSUMER_KEY = os.environ.get("WC_CONSUMER_KEY", "").strip()
+WC_CONSUMER_SECRET = os.environ.get("WC_CONSUMER_SECRET", "").strip()
+BOOKING_EMAIL_META_KEY = "_booking_qr_email_sent"
 
 SMTP_CONNECTION = None
 
@@ -82,6 +93,66 @@ def extract_meta_value(meta_data, key):
             return value
     return None
 
+
+def _meta_truthy(val) -> bool:
+    if val is None:
+        return False
+    if isinstance(val, bool):
+        return val
+    s = str(val).strip().lower()
+    return s in ("1", "true", "yes", "y")
+
+
+def booking_email_marked_sent_in_payload(meta_data) -> bool:
+    return _meta_truthy(extract_meta_value(meta_data or [], BOOKING_EMAIL_META_KEY))
+
+
+def wc_rest_configured() -> bool:
+    return bool(WC_SITE_URL and WC_CONSUMER_KEY and WC_CONSUMER_SECRET)
+
+
+def woocommerce_mark_booking_email_sent(order_id) -> None:
+    """PUT wc/v3/orders/{id} with new meta_data row (adds key; does not replace all order meta)."""
+    if not wc_rest_configured():
+        logger.warning("WC_SITE_URL / WC_CONSUMER_KEY / WC_CONSUMER_SECRET not set; cannot persist email-sent meta")
+        return
+    oid = int(order_id)
+    query = urlencode(
+        {
+            "consumer_key": WC_CONSUMER_KEY,
+            "consumer_secret": WC_CONSUMER_SECRET,
+        }
+    )
+    url = f"{WC_SITE_URL}/wp-json/wc/v3/orders/{oid}?{query}"
+    body = json.dumps(
+        {
+            "meta_data": [
+                {"key": BOOKING_EMAIL_META_KEY, "value": "yes"},
+            ]
+        }
+    ).encode("utf-8")
+    req = Request(
+        url,
+        data=body,
+        method="PUT",
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+    )
+    ctx = ssl.create_default_context()
+    try:
+        with urlopen(req, timeout=20, context=ctx) as resp:
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"Unexpected status {resp.status}")
+    except HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace") if e.fp else ""
+        logger.error(
+            "WooCommerce API error marking email sent",
+            extra={"order_id": oid, "status": e.code, "body": err_body[:2000]},
+        )
+        raise
+    except URLError as e:
+        logger.error("WooCommerce API request failed", extra={"order_id": oid, "reason": str(e.reason)})
+        raise
+
 def format_address(addr):
     if not addr: return "N/A"
     parts = [addr.get("first_name", ""), addr.get("last_name", "")]
@@ -129,12 +200,29 @@ def send_email(to_email: str, html: str, timeslots: list, order_number: str):
 # -------------------------------------------------
 def lambda_handler(event, context):
     logger.info("Lambda invoked")
+    if LOG_FULL_EVENT:
+        logger.info(
+            "FULL_EVENT %s",
+            json.dumps(event, default=str, ensure_ascii=False),
+        )
 
     try:
         raw_body = event.get("body", "")
         if event.get("isBase64Encoded", False):
             raw_body = base64.b64decode(raw_body).decode("utf-8")
         payload = json.loads(raw_body)
+
+        status = payload.get("status")
+        if status != "processing":
+            logger.info("Ignore status: %s", status)
+            return {"statusCode": 200, "body": "OK"}
+
+        if booking_email_marked_sent_in_payload(payload.get("meta_data")):
+            logger.info(
+                "Skipping send: booking email already recorded on order",
+                extra={"order_id": payload.get("id")},
+            )
+            return {"statusCode": 200, "body": "OK"}
 
         # -------------------------------------------------
         # 1. 收集所有時段（支援多個）
@@ -239,6 +327,16 @@ def lambda_handler(event, context):
             return {"statusCode": 400, "body": "No email"}
 
         send_email(customer_email, html_body, timeslots, order_number)
+
+        oid = payload.get("id")
+        if oid is not None and wc_rest_configured():
+            try:
+                woocommerce_mark_booking_email_sent(oid)
+            except Exception:
+                logger.exception(
+                    "Email sent but WooCommerce meta update failed; a later webhook could send again",
+                    extra={"order_id": oid},
+                )
 
         return {"statusCode": 200, "body": "OK"}
 
